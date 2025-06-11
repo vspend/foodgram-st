@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:13.0-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=foodgram
+      - POSTGRES_USER=foodgram_user
+      - POSTGRES_PASSWORD=foodgram_password
+
+  backend:
+    build:
+      context: ../backend        # <- переходим наверх (из infra в project-root), затем в backend/
+      dockerfile: Dockerfile     # <- Dockerfile лежит в backend/
+    volumes:
+      - static:/app/static/
+      - media:/app/media/
+      - ./data:/app/data
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  frontend:
+    container_name: foodgram-front
+    build: ../frontend
+    volumes:
+      - ../frontend/:/app/result_build/
+
+  nginx:
+    image: nginx:1.25.4-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ../frontend/build:/usr/share/nginx/html/
+      - static:/var/html/static/
+      - media:/var/html/media/
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  static:
+  media:
